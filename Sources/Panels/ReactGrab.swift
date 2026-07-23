@@ -653,7 +653,7 @@ extension BrowserPanel {
 
         // The bridge callback may have arrived synchronously during script
         // evaluation. Otherwise this preserves the requested intent until the
-        // authoritative state callback or the bounded timeout.
+        // matching authoritative state callback or lifecycle cancellation.
         if isReactGrabActive == active {
             confirmation.receive(active)
         }

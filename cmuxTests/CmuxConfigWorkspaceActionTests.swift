@@ -439,7 +439,7 @@ struct CmuxConfigWorkspaceActionTests {
     }
 
     @MainActor
-    @Test func rejectedModalAuthorizationReportsFailure() {
+    @Test func missingAuthoritativeWindowFailsClosed() {
         let configPath = "/tmp/cmux-project-\(UUID().uuidString)/.cmux/cmux.json"
         let alert = CmuxConfigConfirmationAlertSpy(modalResponse: .alertThirdButtonReturn)
         var authorizationCount = 0
@@ -451,7 +451,6 @@ struct CmuxConfigWorkspaceActionTests {
             configSourcePath: configPath,
             globalConfigPath: "/tmp/cmux-global-\(UUID().uuidString).json",
             displayCommand: "echo ready",
-            fallbackPresentingWindowProvider: { nil },
             alertFactory: { alert },
             onAuthorized: {
                 authorizationCount += 1
@@ -462,7 +461,7 @@ struct CmuxConfigWorkspaceActionTests {
         )
 
         #expect(outcome == .failed)
-        #expect(alert.didRunModal)
+        #expect(!alert.didRunModal)
         #expect(authorizationCount == 0)
         #expect(denialCount == 1)
     }

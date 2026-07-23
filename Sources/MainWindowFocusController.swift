@@ -21,6 +21,8 @@ final class MainWindowFocusController {
         let id: UInt64
         let mode: RightSidebarMode
         let target: RightSidebarFocusTarget
+        let sourceWorkspaceID: UUID?
+        let sourcePanelID: UUID?
         let initialSearchQuery: String?
     }
 
@@ -292,7 +294,13 @@ final class MainWindowFocusController {
             return true
         }
         if let request = rightSidebarFocusState.request, request.mode == mode {
-            return focusRightSidebar(mode: mode, target: request.target)
+            return focusRightSidebar(
+                mode: mode,
+                target: request.target,
+                sourceWorkspaceID: request.sourceWorkspaceID,
+                sourcePanelID: request.sourcePanelID,
+                initialSearchQuery: request.initialSearchQuery
+            )
         }
         if mode == .find {
             return focusFileSearch()
@@ -529,6 +537,8 @@ final class MainWindowFocusController {
         beginRightSidebarFocusRequest(
             mode: mode,
             target: target,
+            sourceWorkspaceID: sourceWorkspaceID,
+            sourcePanelID: sourcePanelID,
             initialSearchQuery: initialSearchQuery
         )
         intent = .rightSidebar(mode: mode)
@@ -810,6 +820,8 @@ final class MainWindowFocusController {
     private func beginRightSidebarFocusRequest(
         mode: RightSidebarMode,
         target: RightSidebarFocusTarget,
+        sourceWorkspaceID: UUID? = nil,
+        sourcePanelID: UUID? = nil,
         initialSearchQuery: String? = nil
     ) {
         nextRightSidebarFocusRequestId &+= 1
@@ -818,6 +830,8 @@ final class MainWindowFocusController {
                 id: nextRightSidebarFocusRequestId,
                 mode: mode,
                 target: target,
+                sourceWorkspaceID: sourceWorkspaceID,
+                sourcePanelID: sourcePanelID,
                 initialSearchQuery: initialSearchQuery
             )
         )

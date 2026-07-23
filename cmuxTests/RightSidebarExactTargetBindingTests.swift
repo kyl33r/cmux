@@ -80,6 +80,42 @@ struct RightSidebarExactTargetBindingTests {
         #expect(manager.selectedWorkspace === selectedWorkspace)
     }
 
+    @Test("Deferred focus restoration preserves an exact background target")
+    func deferredFocusRestorationPreservesExactBackgroundTarget() throws {
+        let manager = TabManager(autoWelcomeIfNeeded: false)
+        let selectedWorkspace = try #require(manager.selectedWorkspace)
+        let backgroundWorkspace = manager.addWorkspace(
+            select: false,
+            autoWelcomeIfNeeded: false
+        )
+        let backgroundPanelID = try #require(backgroundWorkspace.focusedPanelId)
+        let state = FileExplorerState()
+        let controller = MainWindowFocusController(
+            windowId: UUID(),
+            window: nil,
+            tabManager: manager,
+            fileExplorerState: state
+        )
+
+        #expect(controller.focusRightSidebar(
+            mode: .files,
+            sourceWorkspaceID: backgroundWorkspace.id,
+            sourcePanelID: backgroundPanelID
+        ))
+        #expect(controller.debugPendingRightSidebarFocusMode == .files)
+        #expect(state.rightSidebarContentWorkspaceID == backgroundWorkspace.id)
+        #expect(state.rightSidebarContentPanelID == backgroundPanelID)
+
+        #expect(controller.restoreTargetAfterWindowBecameKey())
+        let restoredTarget = manager.rightSidebarContentTarget(
+            explicitWorkspaceID: state.rightSidebarContentWorkspaceID,
+            explicitPanelID: state.rightSidebarContentPanelID
+        )
+        #expect(restoredTarget?.workspace === backgroundWorkspace)
+        #expect(restoredTarget?.panelID == backgroundPanelID)
+        #expect(manager.selectedWorkspace === selectedWorkspace)
+    }
+
     @Test("Stale explicit targets fail closed instead of falling back to selection")
     func staleExplicitTargetsFailClosed() throws {
         let manager = TabManager(autoWelcomeIfNeeded: false)

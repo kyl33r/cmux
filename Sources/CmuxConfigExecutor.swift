@@ -389,7 +389,7 @@ struct CmuxConfigExecutor {
         displayCommand: String,
         displayTitle: String? = nil,
         presentingWindow: NSWindow? = nil,
-        fallbackPresentingWindowProvider: @escaping @MainActor () -> NSWindow? = { NSApp.keyWindow ?? NSApp.mainWindow },
+        fallbackPresentingWindowProvider: @escaping @MainActor () -> NSWindow? = { nil },
         alertFactory: @escaping @MainActor () -> NSAlert = { NSAlert() },
         onAuthorized: @escaping () -> Void,
         onDenied: (() -> Void)? = nil
@@ -421,7 +421,7 @@ struct CmuxConfigExecutor {
         displayCommand: String,
         displayTitle: String?,
         presentingWindow: NSWindow?,
-        fallbackPresentingWindowProvider: @MainActor () -> NSWindow? = { NSApp.keyWindow ?? NSApp.mainWindow },
+        fallbackPresentingWindowProvider: @MainActor () -> NSWindow? = { nil },
         alertFactory: @MainActor () -> NSAlert = { NSAlert() },
         onAuthorized: @escaping () -> CmuxConfiguredActionExecutionOutcome,
         onDenied: (() -> Void)? = nil
@@ -429,7 +429,6 @@ struct CmuxConfigExecutor {
         let sourcePath = configSourcePath.map(canonicalPath)
         let canonicalGlobalConfigPath = canonicalPath(globalConfigPath)
         let isTrusted = CmuxActionTrust.shared.isTrusted(descriptor)
-        let resolvedPresentingWindow = presentingWindow ?? fallbackPresentingWindowProvider()
         guard let sourcePath,
               sourcePath != canonicalGlobalConfigPath else {
             return onAuthorized()
@@ -437,36 +436,25 @@ struct CmuxConfigExecutor {
         if !confirm, isTrusted {
             return onAuthorized()
         }
-        if let resolvedPresentingWindow {
-            presentConfirmDialog(
-                command: displayCommand,
-                displayTitle: displayTitle,
-                descriptor: descriptor,
-                configPath: sourcePath,
-                presentingWindow: resolvedPresentingWindow,
-                alertFactory: alertFactory
-            ) { allowed in
-                if allowed {
-                    _ = onAuthorized()
-                } else {
-                    onDenied?()
-                }
-            }
-            return .presented
+        guard let resolvedPresentingWindow = presentingWindow ?? fallbackPresentingWindowProvider() else {
+            onDenied?()
+            return .failed
         }
-        let allowed = runConfirmDialog(
+        presentConfirmDialog(
             command: displayCommand,
             displayTitle: displayTitle,
             descriptor: descriptor,
             configPath: sourcePath,
+            presentingWindow: resolvedPresentingWindow,
             alertFactory: alertFactory
-        )
-        if allowed {
-            return onAuthorized()
-        } else {
-            onDenied?()
-            return .failed
+        ) { allowed in
+            if allowed {
+                _ = onAuthorized()
+            } else {
+                onDenied?()
+            }
         }
+        return .presented
     }
 
     private static func resolveModelTarget(
@@ -507,27 +495,6 @@ struct CmuxConfigExecutor {
         alert.beginSheetModal(for: presentingWindow) { response in
             completion(handleConfirmDialogResponse(response, descriptor: descriptor))
         }
-    }
-
-    private static func runConfirmDialog(
-        command: String,
-        displayTitle: String?,
-        descriptor: CmuxActionTrustDescriptor,
-        configPath: String,
-        alertFactory: @MainActor () -> NSAlert
-    ) -> Bool {
-        let alert = makeConfirmDialog(
-            command: command,
-            displayTitle: displayTitle,
-            configPath: configPath,
-            alertFactory: alertFactory
-        )
-        let content = CmuxAlertContent(
-            flattenedText: alert.informativeText,
-            separatingScrollableDetails: sanitizeForDisplay(command)
-        )
-        content.apply(to: alert, presentingWindow: nil)
-        return handleConfirmDialogResponse(alert.runModal(), descriptor: descriptor)
     }
 
     private static func makeConfirmDialog(

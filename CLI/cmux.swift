@@ -17112,10 +17112,11 @@ struct CMUXCLI {
         let env = ProcessInfo.processInfo.environment
         let workspaceHandle = try normalizeWorkspaceHandle(env["CMUX_WORKSPACE_ID"], client: client)
         let surfaceHandle = try normalizeSurfaceHandle(env["CMUX_SURFACE_ID"], client: client, workspaceHandle: workspaceHandle)
+        if let workspaceHandle {
+            params["workspace_id"] = workspaceHandle
+        }
         if let surfaceHandle {
             params["surface_id"] = surfaceHandle
-        } else if let workspaceHandle {
-            params["workspace_id"] = workspaceHandle
         }
         if workspaceHandle == nil,
            surfaceHandle == nil,
@@ -35384,14 +35385,14 @@ private enum CMUXCLIOutput {
 @main
 struct CMUXTermMain {
     static func main() {
+        let initialSIGPIPEInspectionPayload = CMUXCLI.currentSIGPIPEInspectionPayload()
+        _ = signal(SIGPIPE, SIG_DFL)
+        configureCLIStdioNoSIGPIPE()
         if let exitCode = CMUXActionCatalogReadHelper().runIfRequested(
             arguments: CommandLine.arguments
         ) {
             exit(exitCode)
         }
-        let initialSIGPIPEInspectionPayload = CMUXCLI.currentSIGPIPEInspectionPayload()
-        _ = signal(SIGPIPE, SIG_DFL)
-        configureCLIStdioNoSIGPIPE()
         let cli = CMUXCLI(
             args: CommandLine.arguments,
             initialSIGPIPEInspectionPayload: initialSIGPIPEInspectionPayload

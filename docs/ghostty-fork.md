@@ -12,11 +12,53 @@ When we change the fork, update this document and the parent submodule SHA.
 
 ## Current fork changes
 
-Current cmux pinned fork patch head: `b211341be`. It combines indented
-hard-newline link continuations with the presentation-token runtime from
-`24284c3ba` and is published through
-https://github.com/manaflow-ai/ghostty/pull/124.
+Current cmux pinned fork patch head: `5c271509e`. It merges upstream Ghostty
+through `ab0b9da9e` onto the previous `b211341be` pin, ports cmux's fork hooks
+to Zig 0.16.0, and is published through
+https://github.com/manaflow-ai/ghostty/pull/130.
 The corresponding universal ReleaseFast GhosttyKit archive is published at
+https://github.com/manaflow-ai/ghostty/releases/tag/xcframework-5c271509eb736b978fad971de96aa78c1165101c-crashsubdir-cmux-crash-v1
+and pinned in `scripts/ghosttykit-checksums.txt`.
+
+### Zig 0.16 upstream refresh
+
+- Merge commit: `ad344f6a2` (merge `ab0b9da9e` into `b211341be`)
+- Fork follow-up: `5c271509e` (fix Zig 0.16 helper stdout)
+- Itijah dependency: `48572f235`, published through
+  https://github.com/manaflow-ai/itijah/pull/1.
+- Upstream TLDR (`7e02af879..ab0b9da9e`):
+  - Terminal erase, resize, page-capacity, and search behavior gained
+    correctness fixes, bounded caches, and faster scanning.
+  - OSC 52 clipboard writes and Kitty transient-image hints now reach the
+    shared terminal effect path; APC parsing scans bulk input more efficiently.
+  - macOS fixes hidden-titlebar scroll pockets and builds against Xcode 27 SDK
+    headers with libc++ availability annotations.
+  - Ghostty and its packages now require Zig 0.16.0 and its explicit I/O,
+    filesystem, collection, and build APIs.
+  - Bundled color schemes and generated build metadata were refreshed.
+- Fork integration:
+  - Preserves embedded/manual I/O, the exact `GHOSTTY_BIN` contract, bounded
+    iOS render mailboxes, selection epochs, bidi shaping, crash subdirectories,
+    theme hooks, render tokens, renderer lifetimes, and cmux's C APIs.
+  - Ports fork-only app, renderer, terminal, formatter, link, CLI, and test
+    paths to Zig 0.16 explicit I/O and allocator APIs.
+  - Drops the old vendored libxev patch because upstream libxev now supports
+    Darwin and iOS.
+  - Resolves merge conflicts in `build.zig.zon`, `src/App.zig`,
+    `src/Surface.zig`, `src/build/{GhosttyZig,SharedDeps,uucode_config}.zig`,
+    CLI/config/crash/shaper files, renderer files, terminal screen files, and
+    termio execution files. Future merges must keep the shared fork entrypoints
+    above intact rather than reintroducing Zig 0.15 compatibility wrappers.
+- Verification:
+  - Full Ghostty Zig suite on the 48 GB Austin Mac mini with Zig 0.16.0.
+  - Focused Debug viewport row-space regression tests.
+  - Universal arm64/x86_64 Ghostty CLI helper build on the 48 GB cmux mini 3.
+  - Clean universal macOS, iOS device, and iOS simulator GhosttyKit build.
+
+The previous `b211341be` pin combines indented hard-newline link continuations
+with the presentation-token runtime from `24284c3ba` and was published through
+https://github.com/manaflow-ai/ghostty/pull/124. Its universal ReleaseFast
+GhosttyKit archive is published at
 https://github.com/manaflow-ai/ghostty/releases/tag/xcframework-b211341be1ba902e772f57fc67c3e65d35205676-crashsubdir-cmux-crash-v1
 and pinned in `scripts/ghosttykit-checksums.txt`.
 
